@@ -47,14 +47,14 @@ once, the change will persist)
 setx AWS_SHARED_CREDENTIALS_FILE C:\Users\<username>\Downloads\credentials
 ```
 
-# Prior art
+## Prior art
 
 - Christian Frichot's version of the same idea https://github.com/xntrik/aws-saml-capture-extension . We kinda worked on this at the same time.
 - Dave Johnson https://github.com/sportradar/aws-azure-login . Uses a
     headless browser to do the authentication.
 - G.T.C. (Gerard) Laan's version https://github.com/sportradar/aws-azure-login . Very similar and more customisable, I wasn't aware of it before writing my own solution.
 
-# License
+## License
 
 Licensed under [MIT License][MIT License]
 
