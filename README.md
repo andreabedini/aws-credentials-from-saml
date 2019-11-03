@@ -54,6 +54,11 @@ setx AWS_SHARED_CREDENTIALS_FILE C:\Users\<username>\Downloads\credentials
     headless browser to do the authentication.
 - G.T.C. (Gerard) Laan's version https://github.com/sportradar/aws-azure-login . Very similar and more customisable, I wasn't aware of it before writing my own solution.
 
+# License
+
+Licensed under [MIT License][MIT License]
+
 [AWS SAML SSO]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_saml.html
 [assumeRoleWithSAML]: https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.html
 [AWS CLI environment variables]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html
+[MIT License]: https://choosealicense.com/licenses/mit/
