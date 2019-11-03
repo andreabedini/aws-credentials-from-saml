@@ -1,19 +1,18 @@
 {
   "manifest_version": 2,
-  "name": "AWS SAML Credentials",
+  "name": "AWS credentials from SAML",
   "version": "0.1",
   "description": "This extension will capture the SAMLResponse during SSO to AWS and automatically exchange it for AWS credentials",
   "browser_specific_settings": {
     "gecko": {
-      "id": "{6dbbdca8-b43b-4422-8b9b-1ae37ba18a4d}"
+      "id": "aws-credentials-from-saml@andreabedini.com"
     }
   },
   "background": {
     "scripts": [
       "lib/browser-polyfill.js",
       "background.js"
-    ],
-    "persistent": true
+    ]
   },
   "permissions": [
     "downloads",
