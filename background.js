@@ -5,23 +5,31 @@ function parseSAMLDocument(samlDocument) {
   const doc = parser.parseFromString(samlXMLDoc, "text/xml")
 
   // find the list of roles we can assume
-  const roleNodes = doc.querySelectorAll('[Name="https://aws.amazon.com/SAML/Attributes/Role"]')
+  const roleNodes = doc.querySelectorAll('[Name="https://aws.amazon.com/SAML/Attributes/Role"] AttributeValue')
+  console.log(roleNodes)
   const roles = Array.from(roleNodes)
     .map(attribute => {
       const [roleArn, principalArn] = attribute.textContent.split(",")
       return {roleArn, principalArn}
     })
 
-  return roles
+  console.log(roles)
+
+  const sessionDuration = doc.querySelector('[Name="https://aws.amazon.com/SAML/Attributes/SessionDuration"] AttributeValue').textContent
+
+  return {roles, sessionDuration}
 }
 
-async function assumeRoleWithSAML(principalArn, roleArn, samlAssertion) {
+async function assumeRoleWithSAML(principalArn, roleArn, sessionDuration, samlAssertion) {
   const formData = new URLSearchParams()
   formData.append("Action", "AssumeRoleWithSAML")
   formData.append("Version", "2011-06-15")
   formData.append("PrincipalArn", principalArn)
   formData.append("RoleArn", roleArn)
   formData.append("SAMLAssertion", samlAssertion)
+  // formData.append("DurationSeconds", sessionDuration)
+
+  console.log(formData.toString())
 
   const response = await fetch("https://sts.amazonaws.com", {
     method: "POST",
@@ -35,6 +43,13 @@ async function assumeRoleWithSAML(principalArn, roleArn, samlAssertion) {
   return response.json()
 }
 
+async function assumeRolesWithSAML(roles, sessionDuration, samlAssertion) {
+  return Promise.all(roles.map(
+    ({principalArn, roleArn}) =>
+      assumeRoleWithSAML(principalArn, roleArn, sessionDuration, samlAssertion)
+  ))
+}
+
 function downloadAs(string, filename) {
   const blob = new Blob([string])
   const url = URL.createObjectURL(blob)
@@ -46,42 +61,46 @@ function downloadAs(string, filename) {
   })
 }
 
-function onBeforeRequest(requestDetails) {
-  const samlDocument = requestDetails.requestBody.formData.SAMLResponse[0]
-  const roles = parseSAMLDocument(samlDocument)
-
-  /* Call AWS to assume a role using the SAML document
-   *
-   * TODO here we are only considering the first role in the SAML document.
-   * In general the SAML document could specify multiple roles we can
-   * assume and it would be good to cover those use cases too.  We could 1)
-   * obtain credentials for all the roles and let the user choose which
-   * role with the CLI profile flags 2) ask the user (from the browser)
-   * which role to assume (introducing some sort of UI).
-   */
-  assumeRoleWithSAML(roles[0].principalArn, roles[0].roleArn, samlDocument)
-  .then(data => {
-
-    // Unpack the response from assumeRoleWithSAML
-    const {
-      AssumeRoleWithSAMLResponse: {
-        AssumeRoleWithSAMLResult: {
-          Credentials: credentials
-        }
+function formatCredentials(response) {
+  // Unpack the response from assumeRoleWithSAML
+  const {
+    AssumeRoleWithSAMLResponse: {
+      AssumeRoleWithSAMLResult: {
+        AssumedRoleUser: {
+          Arn: assumedRoleUserArn
+        },
+        Credentials: credentials
       }
-    } = data
+    }
+  } = response
 
-    // Prepare the shared credentials file for AWS CLI
-    const str = `[default]
+  const roleName = assumedRoleUserArn.split("/")[1]
+
+  // Prepare the shared credentials file for AWS CLI
+  const str = `[${roleName}]
 aws_access_key_id=${credentials.AccessKeyId}
 aws_secret_access_key=${credentials.SecretAccessKey}
 aws_session_token=${credentials.SessionToken}
     `
 
+  return str
+}
+
+function onBeforeRequest(requestDetails) {
+  const samlAssertion = requestDetails.requestBody.formData.SAMLResponse[0]
+  const {roles, sessionDuration} = parseSAMLDocument(samlAssertion)
+
+  /* Call AWS to assume all the roles using the SAML assertion */
+  assumeRolesWithSAML(roles, sessionDuration, samlAssertion)
+  .then(data => {
+    console.log(data)
+    // Format the credentials for the CLI
+    const str = data.map(formatCredentials).join("\n")
+
     // Download the credentials file
     return downloadAs(str, "credentials")
-  }).catch(() => {
-    // TODO notify the user in case something fails
+  }).catch(e => {
+    console.error(e)
   })
 
   // This is not a blocking handler, it's ok to return null
