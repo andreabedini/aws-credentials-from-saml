@@ -6,14 +6,12 @@ function parseSAMLDocument(samlDocument) {
 
   // find the list of roles we can assume
   const roleNodes = doc.querySelectorAll('[Name="https://aws.amazon.com/SAML/Attributes/Role"] AttributeValue')
-  console.log(roleNodes)
+
   const roles = Array.from(roleNodes)
     .map(attribute => {
       const [roleArn, principalArn] = attribute.textContent.split(",")
       return {roleArn, principalArn}
     })
-
-  console.log(roles)
 
   const sessionDuration = doc.querySelector('[Name="https://aws.amazon.com/SAML/Attributes/SessionDuration"] AttributeValue').textContent
 
@@ -28,8 +26,6 @@ async function assumeRoleWithSAML(principalArn, roleArn, sessionDuration, samlAs
   formData.append("RoleArn", roleArn)
   formData.append("SAMLAssertion", samlAssertion)
   // formData.append("DurationSeconds", sessionDuration)
-
-  console.log(formData.toString())
 
   const response = await fetch("https://sts.amazonaws.com", {
     method: "POST",
@@ -61,7 +57,7 @@ function downloadAs(string, filename) {
   })
 }
 
-function formatCredentials(response) {
+function formatCredentials(response, profileNameOverride) {
   // Unpack the response from assumeRoleWithSAML
   const {
     AssumeRoleWithSAMLResponse: {
@@ -74,14 +70,13 @@ function formatCredentials(response) {
     }
   } = response
 
-  const roleName = assumedRoleUserArn.split("/")[1]
+  const profileName = profileNameOverride || assumedRoleUserArn.split("/")[1]
 
   // Prepare the shared credentials file for AWS CLI
-  const str = `[${roleName}]
+  const str = `[${profileName}]
 aws_access_key_id=${credentials.AccessKeyId}
 aws_secret_access_key=${credentials.SecretAccessKey}
-aws_session_token=${credentials.SessionToken}
-    `
+aws_session_token=${credentials.SessionToken}`
 
   return str
 }
@@ -92,10 +87,11 @@ function onBeforeRequest(requestDetails) {
 
   /* Call AWS to assume all the roles using the SAML assertion */
   assumeRolesWithSAML(roles, sessionDuration, samlAssertion)
-  .then(data => {
-    console.log(data)
-    // Format the credentials for the CLI
-    const str = data.map(formatCredentials).join("\n")
+  .then(responses => {
+    const str =
+      (responses.length == 1)
+        ? formatCredentials(responses[0], "default")
+        : responses.map(response => formatCredentials(response)).join("\n")
 
     // Download the credentials file
     return downloadAs(str, "credentials")
