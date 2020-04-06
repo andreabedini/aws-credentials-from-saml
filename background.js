@@ -58,6 +58,9 @@ function downloadAs(string, filename) {
 }
 
 function formatCredentials(response, profileNameOverride) {
+  if (!response.AssumeRoleWithSAMLResponse) {
+		return ""
+	}
   // Unpack the response from assumeRoleWithSAML
   const {
     AssumeRoleWithSAMLResponse: {
