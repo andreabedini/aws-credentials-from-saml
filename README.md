@@ -2,9 +2,9 @@
 
 ## The problem
 
-_Enterprise_  companies have a strong desire to centralise identity
-management into a single platform/solution, like Azure AD, Auth0, Otka, or
-others). In this scenario one can get access to AWS through Federated SAML
+_Enterprise_ companies have a strong desire to centralise identity
+management into a single platform/solution, like Azure AD, Auth0, Okta, G-suite SAML provider or
+others. In this scenario one can get access to AWS through Federated SAML
 SSO (you can read about it [here][AWS SAML SSO]).
 
 But there's a problem: if you live and breathe AWS, you certanly loathe
