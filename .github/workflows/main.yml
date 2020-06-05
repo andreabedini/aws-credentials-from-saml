@@ -25,7 +25,7 @@ jobs:
         with:
           cmd: sign
           source: ${{ steps.web-ext-build.outputs.target }}
-          channel: unlisted
+          channel: listed
           apiKey: ${{ secrets.JWT_ISSUER }}
           apiSecret: ${{ secrets.JWT_SECRET }}
 
