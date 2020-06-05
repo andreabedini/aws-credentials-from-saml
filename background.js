@@ -25,7 +25,12 @@ async function assumeRoleWithSAML(principalArn, roleArn, sessionDuration, samlAs
   formData.append("PrincipalArn", principalArn)
   formData.append("RoleArn", roleArn)
   formData.append("SAMLAssertion", samlAssertion)
-  // formData.append("DurationSeconds", sessionDuration)
+  if(sessionDuration == Math.ceil(sessionDuration)
+      && 300 < sessionDuration
+      && sessionDuration > 86400
+  ){
+    formData.append("DurationSeconds", sessionDuration)
+  }
 
   const response = await fetch("https://sts.amazonaws.com", {
     method: "POST",
