@@ -26,8 +26,8 @@ async function assumeRoleWithSAML(principalArn, roleArn, sessionDuration, samlAs
   formData.append("RoleArn", roleArn)
   formData.append("SAMLAssertion", samlAssertion)
   if(sessionDuration == Math.ceil(sessionDuration)
-      && 300 < sessionDuration
-      && sessionDuration > 86400
+      && 300 <= sessionDuration
+      && sessionDuration <= 86400
   ){
     formData.append("DurationSeconds", sessionDuration)
   }
